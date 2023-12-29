@@ -1,0 +1,5 @@
+it/polito/bigdata/hadoop/exercise23/ReducerBigData.class
+it/polito/bigdata/hadoop/exercise23/MapperBigData.class
+it/polito/bigdata/hadoop/exercise23/DriverBigData.class
+it/polito/bigdata/hadoop/exercise23/ReducerBigDataFilter.class
+it/polito/bigdata/hadoop/exercise23/MapperBigDataFilter.class

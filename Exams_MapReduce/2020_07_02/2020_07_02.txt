@@ -4,5 +4,5 @@ Since file n.2 --> 1 + 1
 The result is 4. I would not consider a mapper doing a merge of the 2 files.
 Hadoop split the file in blocks. So the total number of blocks is 4.
 
-2. The program prints 2, 1 and 2
+2. The program prints 4, 1 and 2
 A final value can be assigned only once.
