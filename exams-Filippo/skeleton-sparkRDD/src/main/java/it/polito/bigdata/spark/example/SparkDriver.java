@@ -11,7 +11,7 @@ public class SparkDriver {
 		String outputFolder;
 
 		inputPath = args[0];
-		outputFolder = args[3];
+		outputFolder = args[1];
 
 		// Create a Spark Session object and set the name of the application
 		// SparkSession ss = SparkSession.builder().appName("Spark Lab #8 - Template").getOrCreate();
