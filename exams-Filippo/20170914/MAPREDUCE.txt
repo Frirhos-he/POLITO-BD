@@ -1,0 +1,25 @@
+/// map()
+
+if (date.compareTo("2016/09/01") >= 0 && date.compareTo("2017/08/31") <= 0) {
+  String[] fields = values.split(",");
+  String departure_airport_id = fields[5];
+
+  Integer cancelled = 0;
+  if(fields[8].equals("yes")) {
+    isCancelled = 1;
+  }
+
+  context.write(new Text(departure_airport_id), new IntWritable(cancelled));
+}
+
+/// reduce(String key, IntWritable[] values)
+
+int cnt = 0;
+int cancelled = 0;
+
+for(boolean v : values){
+  if(v.get()==1) {cancelled++;}
+  cnt++;	
+}
+Double avg = (double) cancelled / cnt * 100.0;
+context.write(new Text(key), new DoubleWritable(avg));
