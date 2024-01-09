@@ -1,0 +1,6 @@
+DC21,C12,Nice,France,Europe
+DC19,C08,San Francisco,United States,North America
+DC25,C17,Tokyo,Japan,Asia
+DC17,C09,Sydney,Australia,Australia
+DC22,C15,Berlin,Germany,Europe
+DC28,C20,London,United Kingdom,Europe

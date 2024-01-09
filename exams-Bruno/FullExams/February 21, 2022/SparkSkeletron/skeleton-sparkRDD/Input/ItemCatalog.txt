@@ -1,0 +1,64 @@
+ID2,jeans-ripped,Clothing,2005/06/12-09:30:00
+ID3,running-shoes,Nike,2010/02/28-15:45:00
+ID4,jacket-leather,Clothing,2008/11/05-10:20:00
+ID5,dress-formal,Clothing,2015/09/14-14:10:00
+ID6,backpack-hiking,Sporting Goods,2019/07/19-11:25:00
+ID7,laptop-ultrabook,Electronics,2016/05/03-08:45:00
+ID8,smartphone-android,Electronics,2013/12/20-16:30:00
+ID9,headphones-wireless,Electronics,2014/08/27-13:20:00
+ID10,watch-smart,Accessories,2017/11/30-09:55:00
+ID11,perfume-floral,Beauty,2012/04/17-17:00:00
+ID12,umbrella-compact,Accessories,2018/10/08-10:40:00
+ID13,sunglasses-aviator,Accessories,2011/09/25-14:15:00
+ID14,book-fantasy,Books,2007/07/03-09:00:00
+ID15,movie-drama,DVDs,2014/02/14-11:50:00
+ID16,game-board-strategy,Toys & Games,2019/06/28-12:30:00
+ID17,toothbrush-electric,Health & Personal Care,2018/01/21-08:20:00
+ID18,coffee-maker,Home & Kitchen,2015/12/05-16:15:00
+ID19,shaver-electric,Men's Grooming,2016/09/09-13:05:00
+ID20,bracelet-silver,Jewelry,2013/05/22-10:10:00
+ID21,back-massager,Health & Personal Care,2010/08/10-14:00:00
+ID22,blender-smoothie,Home & Kitchen,2009/04/27-15:35:00
+ID23,earrings-diamond,Jewelry,2017/03/01-11:15:00
+ID24,skincare-set,Beauty,2019/10/11-09:00:00
+ID25,keyboard-mechanical,Electronics,2012/11/13-12:45:00
+ID26,flashlight-tactical,Sporting Goods,2011/01/07-10:05:00
+ID27,mug-insulated,Home & Kitchen,2016/06/18-13:55:00
+ID28,tea-set-fine,Home & Kitchen,2015/02/24-14:50:00
+ID29,sneakers-casual,Shoes,2013/07/12-08:30:00
+ID30,tablet-android,Electronics,2014/04/01-09:40:00
+ID31,alarm-clock-digital,Home & Kitchen,2018/09/28-11:00:00
+ID32,brush-paint,Arts,2019/08/02-08:10:00
+ID33,desk-organizer,Office Products,2017/10/05-15:25:00
+ID34,yoga-mat,Sporting Goods,2010/12/13-16:20:00
+ID35,puzzle-1000pc,Toys & Games,2008/03/09-17:30:00
+ID36,toolset-complete,Tools & Home Improvement,2011/06/07-09:35:00
+ID37,socks-woolen,Clothing,2016/01/15-14:05:00
+ID38,back-scrubber,Health & Personal Care,2013/04/03-12:55:00
+ID39,earphones-wired,Electronics,2017/07/21-10:45:00
+ID40,charger-portable,Electronics,2014/11/19-11:10:00
+ID41,keyboard-wireless,Electronics,2012/02/18-13:00:00
+ID42,pencil-case,Office Products,2010/05/16-09:20:00
+ID43,calendar-wall,Office Products,2009/08/24-08:15:00
+ID44,scanner-document,Electronics,2015/03/31-14:22:00
+ID45,shoes-formal,Shoes,2016/12/28-11:18:00
+ID46,lamp-desk,Home & Kitchen,2018/04/25-10:27:00
+ID47,camera-digital,Electronics,2019/01/01-12:03:00
+ID48,fitness-tracker,Health & Personal Care,2014/06/03-09:39:00
+ID49,phone-case,Electronics,2017/09/30-16:49:00
+ID50,headset-gaming,Electronics,2018/02/05-17:14:00
+ID51,pen-set,Office Products,2011/11/11-13:21:00
+ID52,blanket-wool,Home & Kitchen,2012/10/07-08:55:00
+ID53,bottle-vacuum,Home & Kitchen,2015/05/02-15:09:00
+ID54,carpet-rug,Home & Kitchen,2019/04/10-09:29:00
+ID55,mirror-makeup,Beauty,2017/06/14-11:11:00
+ID56,clock-wall,Home & Kitchen,2013/09/12-14:33:00
+ID57,speaker-bluetooth,Electronics,2018/07/06-08:44:00
+ID58,air-fryer,Home & Kitchen,2016/02/17-10:36:00
+ID59,backpack-school,Bags,2014/07/07-16:12:00
+ID60,luggage-set,Travel & Luggage,2019/10/25-09:16:00
+ID61,gloves-leather,Clothing,2015/08/08-11:23:00
+ID62,candle-scented,Home & Kitchen,2012/01/30-09:43:00
+ID63,scissors-fabric,Office Products,2017/12/23-12:28:00
+ID64,book-cook,Books,2018/03/20-14:56:00
+ID65,game-video-console,Electronics,2014/

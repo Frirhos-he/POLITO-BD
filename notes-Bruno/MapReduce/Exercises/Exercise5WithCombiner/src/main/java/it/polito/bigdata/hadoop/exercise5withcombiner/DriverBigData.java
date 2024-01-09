@@ -76,6 +76,8 @@ public class DriverBigData extends Configured implements Tool {
     // Set number of reducers
     job.setNumReduceTasks(numberOfReducers);
     
+
+
     // Execute the job and wait for completion
     if (job.waitForCompletion(true)==true)
     	exitCode=0;
