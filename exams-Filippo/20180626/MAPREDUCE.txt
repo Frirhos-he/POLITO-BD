@@ -1,0 +1,26 @@
+Timestamp,VSID,CPUUsage%,RAMUsage%
+2018/03/01,15:40,VS1,10.5,0.5
+
+> input file type: TextInputFile
+> ...
+
+// MAP()
+String[] fields = values.split(",");
+if(fields[0].split("/")[0].equals("2018") && fields[0].split("/")[1].equals("05")
+    && fields[1].compareTo("9:00")>=0 && fields[1].compareTo("17.59")<=0) {
+  if(fields[3].compareTo("99.8") > 0) {
+    context.write(new Text(fields[2]), new IntWritable(1));
+  }
+}
+
+
+// REDUCE()
+
+int sum = 0;
+for(IntWritable val : values) {
+  sum += val.get();
+}
+
+if(sum >= 10000) {
+  context.write(key, NullWritable.get());
+}
