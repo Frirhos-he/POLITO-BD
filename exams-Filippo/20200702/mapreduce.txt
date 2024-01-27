@@ -1,0 +1,107 @@
+package it.polito.bigdata.hadoop.lab;
+
+import org.apache.hadoop.*;
+
+public class DriverBigData extends Configured implements Tool {
+ /*  public static enum COUNTERS {
+		SELECTED_WORDS, 
+		DISCARDED_WORDS
+	}
+  */
+  @Override
+  public int run(String[] args) throws Exception {
+    /*Path inputPath;
+    Path outputDir;
+    Path outputDir2;
+    int numberOfReducersJob1;
+    int numberOfReducersJob2;
+    int exitCode;
+
+    numberOfReducersJob1 = Integer.parseInt(args[0]);
+    numberOfReducersJob2 = Integer.parseInt(args[1]);
+    inputPath = new Path(args[2]);
+    outputDir = new Path("outJob1");
+    outputDir2 = new Path(args[3]);
+
+    Configuration conf = this.getConf();
+    conf.set("prefix", prefix);
+	
+    Job job = Job.getInstance(conf);
+    job.setJobName("Exam-BD");
+    FileInputFormat.addInputPath(job, inputPath);
+    FileOutputFormat.setOutputPath(job, outputDir);
+    job.setJarByClass(DriverBigData.class);
+    job.setInputFormatClass(TextInputFormat.class); //KeyValueTextInputFormat
+    job.setOutputFormatClass(KeyValueTextOutputFormat.class); //KeyValueTextOutputFormat
+    job.setMapperClass(MapperBigData1.class);
+    job.setMapOutputKeyClass(Text.class);
+    job.setMapOutputValueClass(IntWritable.class);
+    job.setReducerClass(ReducerBigData1.class);
+    job.setOutputKeyClass(Text.class);
+    job.setOutputValueClass(NullWritable.class);
+    job.setNumReduceTasks(numberOfReducersJob1);
+
+    if (job.waitForCompletion(true) == true) {
+        exitCode = 0;
+    } else
+      exitCode = 1;
+
+    return exitCode;
+    */
+  }
+
+  public static void main(String args[]) throws Exception {
+    int res = ToolRunner.run(new Configuration(), new DriverBigData(), args);
+    System.exit(res);
+  }
+}
+
+
+
+####################################################################################
+##################################   MAPPER   ######################################
+####################################################################################
+
+    protected void map(
+        LongWritable key,
+        Text value,
+        Context context) throws IOException, InterruptedException {
+
+        String[] fields = value.split(",");
+        if(fields[2].startsWith("2018") || fields[2].startsWith("2017")) {
+           String k = fields[0];   // key is id+year
+           Integer val = Integer.parseInt(fields[2].split("/")[0]);
+           context.write(new Text(k), new IntWritable(val));
+        }
+    }
+
+}
+
+####################################################################################
+##################################   REDUCER   #####################################
+####################################################################################
+
+class ReducerBigData1 extends Reducer<
+                Text,           // Input key type
+                IntWritable,    // Input value type
+                Text,           // Output key type
+                NullWritable> {  // Output value type
+    
+    @Override
+    protected void reduce(
+        Text key, // Input key type
+        Iterable<DoubleWritable> values, // Input value type
+        Context context) throws IOException, InterruptedException {
+
+        int cnt2018 = 0;
+        int cnt2017 = 0;
+
+        for(IntWritable i : values) {
+            if(i.get() == 2018) {cnt2018++;}
+            else if(i.get() == 2017) {cnt2017++;}
+        }
+
+        if(cnt2017>=30 || cnt2018>=30) {context.write(new Text(key), NullWritable.get());
+
+    }
+
