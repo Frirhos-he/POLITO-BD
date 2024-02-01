@@ -14,5 +14,95 @@ public static void main(String[] args) {
   
   // Create a Spark Context object
   JavaSparkContext sc = new JavaSparkContext(conf);
-  /* Write your code here */
+
+  ////////////// PART 1 //////////////
+  JavaPairRDD<String, Null> usersBusiness = sc.textFile(inputUsers).filter(
+     e->e.split(",")[4].equals("Business")
+  ).mapToPair(e->new Tuple2<String, Null>(e.split(",")[0], Null)).cache();
+
+  JavaRDD<String> meetings = sc.textFile(inputMeetings).cache();
+
+  meetings.mapToPair(e->{
+    String[] fields = e.split(",");
+    String oid = fields[4];
+    Double dur = Double.parseDouble(fields[3]);
+    return new Tuple2<String, SumCountMin>(oid, new SumCountMin(dur,1,dur,dur);
+  }).reduceByKey((a,b) -> {
+     SumCountMinMax scmm = new SumCountMinMax(a.sumDur+b.sumDur,a.count+b.count,0,0);
+      
+     if(a.minDur<b.minDur) { scmm.minDur=a.minDur; }
+     else { scmm.minDur=b.minDur; }
+
+     if(a.maxDur>b.maxDur) { scmm.maxDur=a.maxDur; }
+     else { scmm.maxDur = c.maxDur; }
+
+     return scmm;
+  })
+  .join(usersBusiness)  // get only users with business plan
+  .mapToPair(e->{
+     String key = e._1();
+     Double avg = (double) e._2()._1().sumDur / e._2()._1().count ;
+     String value = avg + "," + e._2()._1().maxDur + "," + e._2()._1().minDur;
+     return new Tuple2<String, String>(key, value);
+  })
+  .saveAsTextFile(outputPathPart1);
+
+  /////////// PART 2 //////////
+  JavaRDD<String> invitations = sc.textFile(invitationsInput);
+  
+  // calculate pairs (MID, nInvitations)
+  JavaPairRDD<String, Integer> meetingInvitations = invitations.mapToPair(e->{
+    String[] fields = e.split(",");
+    return new Tuple2<String, Integer>(fields[0], 1);
+  }).reduceByKey((a,b)->{
+    return a+b;
+  });
+
+  // get the Business user that organized at least one meeting
+  JavaPairRDD<String, String> meetingOrg = meetings.mapToPair(e->{
+    String[] fields = e.split(",");
+    String oid = fields[4];
+    String mid = fields[0];
+    return new Tuple2<String, String>(oid, mid);
+  })
+  .join(usersBusiness)  // get only for business
+  .mapToPair(e->{
+    String mid = e._2()._1();
+    String oid = e._1();
+    return new Tuple2<String, String>(mid,oid);
+  });
+
+  meetingOrg.join(meetingInvitations)
+  .mapToPair(e->{
+     String oid = e._2()._1();
+     String mid = e._1();
+     Integer inv = e._2()._2();
+     StatMeetings sm = new StatMeetings();
+     if(inv<5) { sm.small = 1; }
+     else if(inv<20) {sm.med = 1; }
+     else { sm.large = 1; }
+     return new Tuple2<String, StatMeetings>(oid, sm);
+  }).reduceByKey((a,b) -> {
+     return new StatMeeting(a.small+b.small, a.med+b.med, a.large+b.large);
+  }).mapToPair(e->{
+     String key = e._1();
+     String value = e._2().small+","+e._2().med+","+e._2().large;
+     return new Tuple2<String, String>(key,value);
+  }).saveAsTextFile(outputPart2);
+ 
+
+}
+
+
+public class SumCountMinMax implements Serializable{
+   double sumDur;
+   int count;
+   double minDur;
+   double maxDur;
+}
+
+public class StatMeetings implements Serializable {
+   int small;
+   int med;
+   int large;
 }

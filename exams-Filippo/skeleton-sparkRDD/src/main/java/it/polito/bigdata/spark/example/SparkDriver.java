@@ -1,8 +1,6 @@
 package it.polito.bigdata.spark.example;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import java.io.Serializable;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.*;
 
@@ -11,15 +9,15 @@ import scala.Tuple2;
 public class SparkDriver {
 
 public static void main(String[] args) {
-  String inputPathCustomers;
-  String inputPathItems;
-  String inputPathPurchases;
+  String inputMeetings;
+  String inputUsers;
+  String invitationsInput;
   String outputPathPart1;
   String outputPathPart2;
   
-  inputPathCustomers = "Customers.txt";
-  inputPathItems = "ItemsCatalog.txt";
-  inputPathPurchases = "Purchases.txt";
+  inputMeetings = "Books.txt";
+  inputUsers = "Users.txt";
+  invitationsInput = "something.txt";
   outputPathPart1 = "outPart1/";
   outputPathPart2 = "outPart2/";
   
@@ -29,74 +27,101 @@ public static void main(String[] args) {
   // Create a Spark Context object
   JavaSparkContext sc = new JavaSparkContext(conf);
 
-  /////////// PART 1 ///////////
-  JavaRDD<String> purchasesRDD = sc.textFile(inputPathPurchases).filter( e->{
-    String[] fields = e.split(",");
-    String year = fields[0].split("/")[0];
-    return year.equals("2020") || year.equals("2021");
-  }).cache();
+  ////////////// PART 1 //////////////
+  JavaPairRDD<String, Integer> usersBusiness = sc.textFile(inputUsers).filter(
+     e->e.split(",")[4].equals("Business")
+  ).mapToPair(e->new Tuple2<String, Integer>(e.split(",")[0], null)).cache();
 
-  purchasesRDD.mapToPair( e-> {
+  JavaRDD<String> meetings = sc.textFile(inputMeetings).cache();
+
+  meetings.mapToPair(e->{
     String[] fields = e.split(",");
-    String year = fields[0].split("/")[0];
-    String pid = fields[2];
-    int v2020= year == "2020" ? 1 : 0;
-    int v2021= year == "2021" ? 1 : 0;
-    
-    return new Tuple2<String, Tuple2<Integer,Integer>>(pid, new Tuple2<Integer, Integer>(v2020,v2021));
-  }).reduceByKey(
-    (a,b) -> {
-       int v2020 = a._1()+b._1();
-       int v2021 = a._2()+b._2();
-       return new Tuple2<Integer, Integer>(v2020,v2021);
-  }).filter( e-> {
-    return e._2()._1() >= 10000 && e._2()._2() >= 10000;
+    String oid = fields[4];
+    Double dur = Double.parseDouble(fields[3]);
+    return new Tuple2<String, SumCountMinMax>(oid, new SumCountMinMax(dur,1,dur,dur));
+  }).reduceByKey((a,b) -> {
+     SumCountMinMax scmm = new SumCountMinMax(a.sumDur+b.sumDur,a.count+b.count,0.0,0.0);
+      
+     if(a.minDur<b.minDur) { scmm.minDur=a.minDur; }
+     else { scmm.minDur=b.minDur; }
+
+     if(a.maxDur>b.maxDur) { scmm.maxDur=a.maxDur; }
+     else { scmm.maxDur = b.maxDur; }
+
+     return scmm;
   })
-  .keys()
+  .join(usersBusiness)  // get only users with business plan
+  .mapToPair(e->{
+     String key = e._1();
+     Double avg = (double) e._2()._1().sumDur / e._2()._1().count ;
+     String value = avg + "," + e._2()._1().maxDur + "," + e._2()._1().minDur;
+     return new Tuple2<String, String>(key, value);
+  })
   .saveAsTextFile(outputPathPart1);
 
-  ///////// PART 2 /////////
-  JavaPairRDD<String, String> itemsCategoryRDD = sc.textFile(inputPathItems)
-    .filter(e -> {
-       String year = e.split(",")[3].split("/")[0];
-       return year.compareTo("2020")<0;
-  }).mapToPair( e-> {
-       String[] fields = e.split(",");
-       return new Tuple2<String, String>(fields[0], fields[2]);
-  })
-  ;
+  /////////// PART 2 //////////
+  JavaRDD<String> invitations = sc.textFile(invitationsInput);
   
-  JavaPairRDD<String, Integer> point2RDD = purchasesRDD.filter(e-> {
-     return e.split(",")[0].split("/")[0].equals("2020");
-  }).mapToPair(e-> {
-     String[] fields = e.split(",");
-     String month = fields[0].split("/")[1];
-     String pid = fields[2];
-     String uid = fields[1];
-     return new Tuple2<String, String>(pid+","+month, uid);
-  }).groupByKey()
-  .filter(e->{
-     List<String> uids = new ArrayList<String>();
-     for(String uid : e._2()) {
-        if(!uids.contains(uid)) uids.add(uid);
-     }
-     return uids.size()<10;
-  }).mapToPair( e-> {
-     return new Tuple2<String, Integer>(e._1().split(",")[0], 1);
-  }).reduceByKey(
-   (a,b) -> {
-      return a+b;
-  }).filter(e -> e._2()>1)
-  ;
-  
-  point2RDD.join(itemsCategoryRDD).mapToPair( e-> {
-    return new Tuple2<String, String>(e._1(), e._2()._2());
-  })
-  .saveAsTextFile(outputPathPart2)
-  ;
+  // calculate pairs (MID, nInvitations)
+  JavaPairRDD<String, Integer> meetingInvitations = invitations.mapToPair(e->{
+    String[] fields = e.split(",");
+    return new Tuple2<String, Integer>(fields[0], 1);
+  }).reduceByKey((a,b)->{
+    return a+b;
+  });
 
+  // get the Business user that organized at least one meeting which
+  JavaPairRDD<String, String> meetingOrg = meetings.mapToPair(e->{
+    String[] fields = e.split(",");
+    String oid = fields[4];
+    String mid = fields[0];
+    return new Tuple2<String, String>(oid, mid);
+  })
+  .join(usersBusiness)  // get only for business
+  .mapToPair(e->{
+    String mid = e._2()._1();
+    String oid = e._1();
+    return new Tuple2<String, String>(mid,oid);
+  });
+
+  meetingOrg.join(meetingInvitations)
+  .mapToPair(e->{
+     String oid = e._2()._1();
+     String mid = e._1();
+     Integer inv = e._2()._2();
+     StatMeetings sm = new StatMeetings(0,0,0);
+     if(inv<5) { sm.small = 1; }
+     else if(inv<20) {sm.med = 1; }
+     else { sm.large = 1; }
+     return new Tuple2<String, StatMeetings>(oid, sm);
+  }).reduceByKey((a,b) -> {
+     return new StatMeetings(a.small+b.small, a.med+b.med, a.large+b.large);
+  }).mapToPair(e->{
+     String key = e._1();
+     String value = e._2().small+","+e._2().med+","+e._2().large;
+     return new Tuple2<String, String>(key,value);
+  }).saveAsTextFile(outputPathPart2);
+ 
   sc.close();
 
-  
 }
+
+   public class SumCountMinMax implements Serializable {
+      public SumCountMinMax(double d, int i, double j, double k) {
+         //TODO Auto-generated constructor stub
+      }
+      double sumDur;
+      int count;
+      double minDur;
+      double maxDur;
+   }
+
+   public class StatMeetings implements Serializable {
+      public StatMeetings(int i, int j, int k) {
+         //TODO Auto-generated constructor stub
+      }
+      int small;
+      int med;
+      int large;
+   }
 }

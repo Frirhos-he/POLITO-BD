@@ -35,46 +35,30 @@ public class DriverBigData extends Configured implements Tool {
     job.setOutputFormatClass(TextOutputFormat.class); //KeyValueTextOutputFormat
     job.setMapperClass(MapperBigData1.class);
     job.setMapOutputKeyClass(Text.class);
-    job.setMapOutputValueClass(ProductIdRatingWritable.class);
+    job.setMapOutputValueClass(IntWritable.class);
     job.setReducerClass(ReducerBigData1.class);
     job.setOutputKeyClass(Text.class);
-    job.setOutputValueClass(DoubleWritable.class);
+    job.setOutputValueClass(IntWritable.class);
     job.setNumReduceTasks(numberOfReducersJob1);
 
     if (job.waitForCompletion(true) == true) {
       Job job2 = Job.getInstance(conf);
       job2.setJobName("Lab 4 - Job 2");
       
-      MultipleInputs.addInputPath(job, inputPath1, TextInputFormat.class, MapperType1BigData.class);
-      MultipleInputs.addInputPath(job, inputPath2, TextInputFormat.class, MapperType2BigData.class);
-     
-      MultipleOutputs.addNamedOutput(job, 
-      "hightemp", 
-      TextOutputFormat.class, 
-      FloatWritable.class, 
-      NullWritable.class);
-      MultipleOutputs.addNamedOutput(job, 
-      "normaltemp", 
-      TextOutputFormat.class, 
-      Text.class, 
-      NullWritable.class);
       FileInputFormat.addInputPath(job2, outputDir);
       FileOutputFormat.setOutputPath(job2, outputDir2);
       job2.setJarByClass(DriverBigData.class);
       job2.setInputFormatClass(KeyValueTextInputFormat.class);
       job2.setOutputFormatClass(TextOutputFormat.class);
       job2.setMapperClass(MapperBigData2.class);
-      job2.setMapOutputKeyClass(Text.class);
-      job2.setMapOutputValueClass(DoubleWritable.class);
+      job2.setMapOutputKeyClass(NullWritable.class);
+      job2.setMapOutputValueClass(Text.class);
       job2.setReducerClass(ReducerBigData2.class);
       job2.setOutputKeyClass(Text.class);
-      job2.setOutputValueClass(DoubleWritable.class);
-      job2.setNumReduceTasks(numberOfReducersJob2);
-      long Start = Time.now();
-			job2.addCacheFile(
-				new Path(outputDir + "/part-r-00000").toUri());
+      job2.setOutputValueClass(NullWritable.class);
+      job2.setNumReduceTasks(1);
+
       if (job2.waitForCompletion(true) == true){
-        Counter totRecords = job.getCounters().findCounter(MY_COUNTERS.TOTAL_RECORDS);
         exitCode = 0;
       }
       else
@@ -98,21 +82,18 @@ public class DriverBigData extends Configured implements Tool {
 ##################################   MAPPER   ######################################
 ####################################################################################
 
-  protected void setup(Context context) {
-
-  }
-
     protected void map(
         LongWritable key,
         Text value,
         Context context) throws IOException, InterruptedException {
 
-
+        String[] fields = value.split(",");
+        String mid = fields[0];
+        if(fields[2].equals("Yes")) {
+           context.write(new Text(mid), new IntWritable(1));
+        }
     }
 
-  protected void cleanup(Context context) throws IOException, InterruptedException {
-
-    }
 }
 
 ####################################################################################
@@ -121,13 +102,50 @@ public class DriverBigData extends Configured implements Tool {
 
 class ReducerBigData1 extends Reducer<
                 Text,           // Input key type
-                DoubleWritable,    // Input value type
+                IntWritable,    // Input value type
+                Text,           // Output key type
+                IntWritable> {  // Output value type
+    
+    @Override
+    protected void reduce(
+        Text key, // Input key type
+        Iterable<IntWritable> values, // Input value type
+        Context context) throws IOException, InterruptedException {
+
+        int sum=0;
+        for(IntWritable i : values) {
+	   sum+=i.get();
+        }
+
+        context.write(key, new IntWritable(sum));
+    }
+
+}
+
+####################################################################################
+##################################   MAPPER2   ######################################
+####################################################################################
+
+    protected void map(
+        Text key,
+        IntWritable value,
+        Context context) throws IOException, InterruptedException {
+
+        // move everything to null key
+        context.write(NullWritable.get(), new Text(key+","+value));
+    }
+
+}
+
+####################################################################################
+##################################   REDUCER2   #####################################
+####################################################################################
+
+class ReducerBigData2 extends Reducer2<
+                NullWritable,           // Input key type
+                Text,    // Input value type
                 Text,           // Output key type
                 NullWritable> {  // Output value type
-
-    protected void setup(Context context) {
-
-    }
     
     @Override
     protected void reduce(
@@ -135,8 +153,22 @@ class ReducerBigData1 extends Reducer<
         Iterable<DoubleWritable> values, // Input value type
         Context context) throws IOException, InterruptedException {
 
-    }
+        int maxVal = Integer.MIN_VALUE;
+        String maxId = null;
 
-  protected void cleanup(Context context) throws IOException, InterruptedException {
+        for(String s : values) {
+           String[] fields = s.split(",");
+           int val = Integer.parseInt(fields[1]);
+           if(val>maxVal) {
+              maxVal = val;
+              maxId = fields[0];
+           } else if(val == maxVal && fields[0].compareTo(maxId)>0) {
+              maxId = fields[0];
+           }
+        }
+
+        context.write(new Text(maxId), NullWritable.get());
+
+    }
 
 }
