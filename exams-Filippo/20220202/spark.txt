@@ -1,0 +1,90 @@
+public static void main(String[] args) {
+  String inputApps;
+  String inputusers;
+  String inputActions;
+  String outputPathPart1;
+  String outputPathPart2;
+  
+  inputApps = "Apps.txt";
+  inputUsers = "Users.txt";
+  inputActions = "Actions.txt";
+  outputPathPart1 = "outPart1/";
+  outputPathPart2 = "outPart2/";
+  
+  // Create a configuration object and set the name of the application
+  SparkConf conf = new SparkConf().setAppName("Spark Exam - Exercise #2");
+  
+  // Create a Spark Context object
+  JavaSparkContext sc = new JavaSparkContext(conf);
+
+  ///////////// PART 1 /////////////
+  JavaRDD<String> actions = sc.textFile(inputActions).cache();
+  JavaRDD<String> apps = sc.textFile(inputApps);
+
+  JavaPairRDD<String, String> idNameApp = apps.mapToPair(e->{
+    String[] fields = e.split(",");
+    return new Tuple2<String, String>(fields[0], fields[1]);
+  });
+
+  actions.filter(e->{
+    return e.split(",")[2].startsWith("2021/");
+  }).mapToPair(e->{
+     String[] fields = e.split(",");
+     String appId = fields[1];
+     String action = fields[3];
+     String month = fields[2].split("/")[1];
+     int v = 0;
+     if(action.equals("Install")) { v=1; }
+     else if(action.equals("Remove")) {v=-1;}
+     return new Tuple2<String, Integer>(appId+","+month, v);
+  })
+  .reduceByKey( (a,b)->{
+     return a+b;
+  }).filter(e->e._2()>0)
+  .mapToPair(e-> {
+     return new Tuple2<String, Integer>(e._1(),1);
+  }).reduceByKey( (a,b) -> {
+     return a+b;
+  }).filter(e-> e._2()==12)
+  .join(idNameApp)
+  .mapToPair(e->{
+    return new Tuple2<String, String>(e._1(), e._2()._2());
+  })
+  .saveAsTextFile(outputPathPart1)
+  ;
+
+  //////////// PART 2 ////////////
+  // get the users whom installed the app before the jan 1 2022
+  JavaRDD<String> userAction2021 = actions.filter(e->{
+    String[] fields = e.split(",");
+    return fields[2].split("/").compareTo("2021")<=0 && fields[3].equals("Install");
+  }).map(e->{
+    String[] fields = e.split(",");
+    return fields[0]+","+fields[1];
+  }).distinct();
+  
+  // get the user who installed the app after 31 dec 2021
+  JavaRDD<String> installUsers2022 = actions.filter(e->{
+    String[] fields = e.split(",");
+    return fields[2].split("/").compareTo("2022")>=0 && fields[3].equals("Install");
+  }).map(e->{
+    String [] fields = e.split(",");
+    return fields[0]+","+fields[1];
+  }).distinct();
+
+  // subtract by key (second - first)
+  JavaRDD<String> newUsers = installUsers.subtract(userAction2021);
+
+  // maptopair(app,user) count the number of users
+  JavaPairRDD<String, Integer> appNuser = newUsers.mapToPair(e->{
+    String[] fields = e.split(",");
+    return new Tuple2<String, Integer>(fields[1], 1);
+  }).reduceByKey((a,b)->a+b)
+  .cache()
+  ;
+
+  double maxVal = appNuser.values().reduce((a,b)->Math.max(a,b));
+
+  appNuser.filter(e->e._2()==maxVal).keys().saveAsTextFile(outputPath2);
+
+}

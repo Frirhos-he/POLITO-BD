@@ -1,0 +1,166 @@
+package it.polito.bigdata.hadoop.lab;
+
+import org.apache.hadoop.*;
+
+public class DriverBigData extends Configured implements Tool {
+ /*  public static enum COUNTERS {
+		SELECTED_WORDS, 
+		DISCARDED_WORDS
+	}
+  */
+  @Override
+  public int run(String[] args) throws Exception {
+    /*Path inputPath;
+    Path outputDir;
+    Path outputDir2;
+    int numberOfReducersJob1;
+    int numberOfReducersJob2;
+    int exitCode;
+
+    numberOfReducersJob1 = Integer.parseInt(args[0]);
+    numberOfReducersJob2 = Integer.parseInt(args[1]);
+    inputPath = new Path(args[2]);
+    outputDir = new Path("outJob1");
+    outputDir2 = new Path(args[3]);
+
+    Configuration conf = this.getConf();
+    conf.set("prefix", prefix);
+	
+    Job job = Job.getInstance(conf);
+    job.setJobName("Exam-BD");
+    FileInputFormat.addInputPath(job, inputPath);
+    FileOutputFormat.setOutputPath(job, outputDir);
+    job.setJarByClass(DriverBigData.class);
+    job.setInputFormatClass(TextInputFormat.class); //KeyValueTextInputFormat
+    job.setOutputFormatClass(TextOutputFormat.class); //KeyValueTextOutputFormat
+    job.setMapperClass(MapperBigData1.class);
+    job.setMapOutputKeyClass(Text.class);
+    job.setMapOutputValueClass(ProductIdRatingWritable.class);
+    job.setReducerClass(ReducerBigData1.class);
+    job.setOutputKeyClass(Text.class);
+    job.setOutputValueClass(DoubleWritable.class);
+    job.setNumReduceTasks(numberOfReducersJob1);
+
+    if (job.waitForCompletion(true) == true) {
+      Job job2 = Job.getInstance(conf);
+      job2.setJobName("Lab 4 - Job 2");
+      
+      MultipleInputs.addInputPath(job, inputPath1, TextInputFormat.class, MapperType1BigData.class);
+      MultipleInputs.addInputPath(job, inputPath2, TextInputFormat.class, MapperType2BigData.class);
+     
+      MultipleOutputs.addNamedOutput(job, 
+      "hightemp", 
+      TextOutputFormat.class, 
+      FloatWritable.class, 
+      NullWritable.class);
+      MultipleOutputs.addNamedOutput(job, 
+      "normaltemp", 
+      TextOutputFormat.class, 
+      Text.class, 
+      NullWritable.class);
+      FileInputFormat.addInputPath(job2, outputDir);
+      FileOutputFormat.setOutputPath(job2, outputDir2);
+      job2.setJarByClass(DriverBigData.class);
+      job2.setInputFormatClass(KeyValueTextInputFormat.class);
+      job2.setOutputFormatClass(TextOutputFormat.class);
+      job2.setMapperClass(MapperBigData2.class);
+      job2.setMapOutputKeyClass(Text.class);
+      job2.setMapOutputValueClass(DoubleWritable.class);
+      job2.setReducerClass(ReducerBigData2.class);
+      job2.setOutputKeyClass(Text.class);
+      job2.setOutputValueClass(DoubleWritable.class);
+      job2.setNumReduceTasks(numberOfReducersJob2);
+      long Start = Time.now();
+			job2.addCacheFile(
+				new Path(outputDir + "/part-r-00000").toUri());
+      if (job2.waitForCompletion(true) == true){
+        Counter totRecords = job.getCounters().findCounter(MY_COUNTERS.TOTAL_RECORDS);
+        exitCode = 0;
+      }
+      else
+        exitCode = 1;
+    } else
+      exitCode = 1;
+
+    return exitCode;
+    */
+  }
+
+  public static void main(String args[]) throws Exception {
+    int res = ToolRunner.run(new Configuration(), new DriverBigData(), args);
+    System.exit(res);
+  }
+}
+
+
+
+####################################################################################
+##################################   MAPPER   ######################################
+####################################################################################
+
+  protected void setup(Context context) {
+
+  }
+
+    protected void map(
+        LongWritable key,
+        Text value,
+        Context context) throws IOException, InterruptedException {
+
+        String[] fields = value.split(",");
+        String year = fields[0].split("/")[0];
+        context.write(new Text(year), new IntWritable(1));
+    }
+
+  protected void cleanup(Context context) throws IOException, InterruptedException {
+
+    }
+}
+
+####################################################################################
+##################################   REDUCER   #####################################
+####################################################################################
+
+class ReducerBigData1 extends Reducer<
+                Text,           // Input key type
+                DoubleWritable,    // Input value type
+                Text,           // Output key type
+                NullWritable> {  // Output value type
+
+    int minYear, max;
+
+    protected void setup(Context context) {
+        max = INTEGER.MIN_VALUE;
+        minYear = 0;
+    }
+    
+    @Override
+    protected void reduce(
+        Text key, // Input key type
+        Iterable<DoubleWritable> values, // Input value type
+        Context context) throws IOException, InterruptedException {
+
+        int sum = 0;
+        for(IntWritable i : values) {
+           sum += i.get();
+        }
+        int year = Integer.parseInt(key);
+        if(sum>max) {
+           max = sum;
+           minYear = year;
+        } else if(sum==max && year<minYear) {
+           minYear = year;
+        }
+    }
+
+  protected void cleanup(Context context) throws IOException, InterruptedException {
+     context.write(new IntWritable(minYear), new IntWritable(max));
+  }
+
+}
+
+
+
+
+// l'alternativa è fare due job nei quali il primo emette la coppia anno e nPurchase e l'altro va a calcolare quale è l'anno con il maggior numero di purchase e che è in numero più piccolo.
+

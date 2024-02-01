@@ -1,15 +1,3 @@
-package it.polito.bigdata.spark.example;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import org.apache.spark.SparkConf;
-import org.apache.spark.api.java.*;
-
-import scala.Tuple2;
-
-public class SparkDriver {
-
 public static void main(String[] args) {
   String inputPathCustomers;
   String inputPathItems;
@@ -40,14 +28,14 @@ public static void main(String[] args) {
     String[] fields = e.split(",");
     String year = fields[0].split("/")[0];
     String pid = fields[2];
-    int v2020= year == "2020" ? 1 : 0;
-    int v2021= year == "2021" ? 1 : 0;
-    
+    int v2020=0;
+    int v2021=0;
+    year == 2020 ? v2020=1 : v2021=1;
     return new Tuple2<String, Tuple2<Integer,Integer>>(pid, new Tuple2<Integer, Integer>(v2020,v2021));
   }).reduceByKey(
     (a,b) -> {
        int v2020 = a._1()+b._1();
-       int v2021 = a._2()+b._2();
+       int v2021 = 1._2()+b._2();
        return new Tuple2<Integer, Integer>(v2020,v2021);
   }).filter( e-> {
     return e._2()._1() >= 10000 && e._2()._2() >= 10000;
@@ -78,7 +66,7 @@ public static void main(String[] args) {
   .filter(e->{
      List<String> uids = new ArrayList<String>();
      for(String uid : e._2()) {
-        if(!uids.contains(uid)) uids.add(uid);
+        uids.contains(uid) ? null : uids.add(uid);
      }
      return uids.size()<10;
   }).mapToPair( e-> {
@@ -89,7 +77,7 @@ public static void main(String[] args) {
   }).filter(e -> e._2()>1)
   ;
   
-  point2RDD.join(itemsCategoryRDD).mapToPair( e-> {
+  point2RDD.join(itemsCategory).mapToPair( e-> {
     return new Tuple2<String, String>(e._1(), e._2()._2());
   })
   .saveAsTextFile(outputPathPart2)
@@ -98,5 +86,4 @@ public static void main(String[] args) {
   sc.close();
 
   
-}
 }
