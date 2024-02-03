@@ -98,27 +98,26 @@ public class DriverBigData extends Configured implements Tool {
 ##################################   MAPPER   ######################################
 ####################################################################################
 class MapperBigData1 extends Mapper<
-    LongWritable,  // input key
-    Text,   // input value
-    Text,   // output key
-    kwh2021> {  // output value  
-
-  protected void setup(Context context) {
-
-  }
+    LongWritable,
+    Text,
+    Text,
+    IntWritable> {
 
     protected void map(
         LongWritable key,
         Text value,
         Context context) throws IOException, InterruptedException {
 
+        String[] fields = value.split(",");
+        String date = fields[1];
+        String os = fields[2];
 
+        if(date.compareTo("2021/07/04")>=0 && date.compareTo("2022/07/03")<=0)
+          context.write(new Text(os), new IntWritable(1));
     }
 
-  protected void cleanup(Context context) throws IOException, InterruptedException {
-
-    }
 }
+
 
 ####################################################################################
 ##################################   REDUCER   #####################################
@@ -126,22 +125,80 @@ class MapperBigData1 extends Mapper<
 
 class ReducerBigData1 extends Reducer<
                 Text,           // Input key type
-                DoubleWritable,    // Input value type
+                IntWritable,    // Input value type
                 Text,           // Output key type
-                NullWritable> {  // Output value type
+                IntWritable> {  // Output value type
 
-    protected void setup(Context context) {
 
-    }
-    
     @Override
     protected void reduce(
         Text key, // Input key type
         Iterable<DoubleWritable> values, // Input value type
         Context context) throws IOException, InterruptedException {
 
+        int sum = 0;
+        for(IntWritable i : values) {
+          sum+=i.get();
+        }
+        context.write(key, new IntWritable(sum));
     }
 
-  protected void cleanup(Context context) throws IOException, InterruptedException {
+
+}
+
+####################################################################################
+##################################   MAPPER2   #####################################
+####################################################################################
+
+class MapperBigData1 extends Mapper<
+    Text,
+    IntWritable,
+    NullWritable,
+    Text> {
+
+    protected void map(
+        Text key,
+        IntWritable value,
+        Context context) throws IOException, InterruptedException {
+
+        context.write(NullWritable.get(), new Text(key+","+value)); 
+
+    }
+
+
+}
+
+####################################################################################
+##################################   REDUCER2   ####################################
+####################################################################################
+
+class ReducerBigData1 extends Reducer<
+                NullWritable,           // Input key type
+                Text,    // Input value type
+                Text,           // Output key type
+                NullWritable> {  // Output value type
+
+    
+    @Override
+    protected void reduce(
+        Text key, // Input key type
+        Iterable<Text> values, // Input value type
+        Context context) throws IOException, InterruptedException {
+
+        int max = 0;
+        String osMax = null;
+        for(String s : values) {
+            String[] fields = s.split(",");
+            if(Integer.parseInt(fields[1]) > max) {
+               max = Integer.parseInt(fields[1]);
+               osMax = fields[0];
+            } else if ( Integer.parseInt(fields[1]) == max && osMax.compareTo(fields[1])>=0 ) {
+               osMax = fields[0];
+            }
+        }
+
+        context.write(new Text(osMax), NullWritable.get());
+    }
+
 
 }

@@ -1,0 +1,71 @@
+public static void main(String[] args) {
+  String inputServers;
+  String inputPatches;
+  String inputApplied;
+  String outputPathPart1;
+  String outputPathPart2;
+  
+  inputServers = "Servers.txt";
+  inputPatches = "Patches.txt";
+  inputApplied = "AppliedPatches.txt";
+  outputPathPart1 = "outPart1/";
+  outputPathPart2 = "outPart2/";
+  
+  // Create a configuration object and set the name of the application
+  SparkConf conf = new SparkConf().setAppName("Spark Exam - Exercise #2");
+  
+  // Create a Spark Context object
+  JavaSparkContext sc = new JavaSparkContext(conf);
+  /* Write your code here */
+
+  PairRDD<String> applied = sc.textFile(inputApplied).cache();
+  PairRDD<String> patches = sc.textFile(inputPatches);
+
+  JavaPairRDD<String, String> pidDate = patches.filter(e->e.split(",")[2].equals("Ubuntu 2"))
+  .mapToPair(e-> {
+    String[] fields = e.split(",");
+    String pid = fields[0];
+    String rdate = fields[1];
+    return new Tuple2<String, String>(pid+","+rdate, null);
+  });
+
+  // get the servers that match and count
+  applied.mapToPair(e->{
+    String[] fields = e.split(",");
+    return new Tuple2<String, Integer>(fields[0]+","+fields[2], 1);
+  })
+  .reduceByKey((a,b)->a+b)
+  .filter(e->e._2()>100)
+  .join(pidDate)
+  .map(e->{
+     return e._1().split(",")[0];
+  })
+  .saveAsTextFile(outputPathPart1);
+
+  //////// PART 2 /////////
+  JavaRDD<String> sidmonthApplied = applied.filter(e->e.split(",")[2].startsWith("2021/"))
+    .map(e-> {
+       String[] fields = e.split(",");
+       String[] date = fields[2].split("/");
+       return fields[1]+","+date[1];
+    })
+    .distinct();  // now i have SID,month with applied patches
+    
+  JavaRDD<String> sidMonth = sc.textFile(inputServers).flatMap(e->{
+    String[] fields = e.split(",");
+    List<String> ret = new ArrayList<>();
+    for(int i=1; i<13; i++){
+      ret.add(fields[0]+","+i;
+    }
+    return ret.iterator();
+  });
+
+  sidMonth.subtract(sidmonthApplied)
+  .mapToPair(e->{
+     return new Tuple2<String, Integer>(e.split(",")[0], 1);
+  })
+  .reduceByKey((a,b) -> a+b )
+  .saveAsTextFile(outputPathPart2)
+  ;
+  
+}
