@@ -1,0 +1,66 @@
+public static void main(String[] args) {
+  String inputPathServers;
+  String inputPathPatchesServers;
+  String outputPathPart1;
+  String outputPathPart2;
+  
+  inputPathbooks = "Books.txt";
+  inputPathPurchases = "Purchases.txt";
+  outputPathPart1 = "outPart1/";
+  outputPathPart2 = "outPart2/";
+  
+  // Create a configuration object and set the name of the application
+  SparkConf conf = new SparkConf().setAppName("Spark Exam - Exercise #2");
+  
+  // Create a Spark Context object
+  JavaSparkContext sc = new JavaSparkContext(conf);
+
+  JavaRDD<String> booksRDD = sc.textFile(inputBooks);
+  JavaRDD<String> purchasesRDD = sc.textFile(purchasesBooks).filter(e->e.split(",")[2].equals("2018")).cache();
+
+  purchasesRDD.mapToPair(e->{
+     String[] fields = e.split(",");
+     return new Tuple2<String, Integer>(fields[1]+","+fields[2], 1);
+  }).reduceByKey((a,b)->{
+     return a+b;
+  }).mapToPair(e->{
+     return new Tuple2<String, Integer>(e._1().split(",")[0], e._2());
+  }).reduceByKey((a,b)->{
+     return Math.max(a,b);
+  }).saveAsTextFile(outputPathPart1);
+
+  ////// PART 2 //////
+  JavaPairRDD<String, Integer> nPurchasedRDD = purchasesRDD.mapToPair(e->{
+     return new Tuple2<String, Integer>(e.split(",")[1], 1);
+  }).reduceByKey((a,b)->a+b);
+
+  // select the purchases greater than 10% of the top 
+  JavaPairRDD<String, Integer> purchaseDateGreaterThan10percent = purchasesRDD.mapToPair(e->{
+    String fields [] = e.split(",");
+    String date = fields[2];
+    String id = fields[1];
+    return new Tuple2<String, Integer>(id+"_"+date, 1);
+  }).reduceByKey((a,b) -> a+b)
+    .maptopair(e->new Tuple2<>(e._1().split("_")[0], ...)
+    .join(nPurchasesRDD)
+    .filter(e->e._2()._1() >= 0.1 * e._2()._2())
+    ;
+
+  purchaseDateGreaterThan10percent.flatMapToPair(e->{
+     List<Tuple2<String, Integer>> ret = new ArrayList<>();
+     String bid = e._1().split("_")[0];
+     String date2 = e._1().split("_")[1];
+     String date1 = DateTool.previousDeltaDate(date2,1);
+     String date0 = DateTool.previousDeltaDate(date2,2);
+     ret.add(new Tuple2<>(bid+","+date2, 1);
+     ret.add(new Tuple2<>(bid+","+date1, 1);
+     ret.add(new Tuple2<>(bid+","+date0, 1);
+
+     return ret.iterators();
+  }).reduceByKey((a,b)-> a+b)
+    .filter(e->e._2() == 3)
+    .keys()
+    .saveAsTextFile(outputPathPart2);
+
+
+}

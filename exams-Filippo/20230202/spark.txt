@@ -1,0 +1,70 @@
+public static void main(String[] args) {
+  String inputHouses= args[0];
+  String inputConsumption = args[1];
+  String outputPathPart1;
+  String outputPathPart2;
+  
+  outputPathPart1 = "outPart1/";
+  outputPathPart2 = "outPart2/";
+  
+  // Create a configuration object and set the name of the application
+  SparkConf conf = new SparkConf().setAppName("Spark Exam - Exercise #2");
+  
+  // Create a Spark Context object
+  JavaSparkContext sc = new JavaSparkContext(conf);
+
+  // PART 1
+  JavaRDD<String> houses = sc.textFile(inputHouses);
+  
+  JavaPairRDD<String, String> houseCountry = houses.mapToPair(e-> {
+      String country = e.split(",")[2];
+      String house = e.split(",")[0];
+      String city = e.split(",")[1];
+      return new Tuple2<String,String>(house, country + "," + city);
+  }).cache();
+
+  JavaRDD<String> cons = sc.textFile(inputConsumption).cache();
+
+  JavaPairRDD<String, Integer> houseHighCons = cons.filter(e->e.split(",")[1].startsWith("2021"))
+   .mapToPair(e->{
+      String fields[] = e.split(",");
+      String house = fields[0];
+      String cons = Integer.parseInt(fields[2]);
+      return new Tuple2<String, Tuple2<Integer, Integer>>(house, new Tuple2<Integer, Integer>(cons,1));
+   })
+   .reduceByKey((a,b)->new Tuple2<>(a._1()+b._1(), a._2()+b._2()))
+   .filter(e->{
+      return e._2()._1() > e._2()._2() * 30 ;
+   });
+
+  houseCountry.subtractByKey(houseHighCons)
+    .values()                // get country,city
+    .map(e->e.split(",")[1]) // get just the country
+    .distinct()
+    .saveAsTextFile(outputPathPart1);
+
+
+  // PART 2
+  JavaPairRDD<String,Integer> interRes = cons.filter(e->e.split(",")[1].startsWith("2021"))
+    .mapToPair(e->{
+        String[] fields = e.split(",");
+        return new Tuple2<String,Integer>(fields[0],Integer.parseInt(fields[2]));
+    })
+    .reduceByKey((a,b)->a+b)
+    .filter(e->e._2()>10000)
+    .join(houseCountry)   // <houseID, <cons, country,city>>
+    .mapToPair(e->{
+       return new Tuple2<String,Integer>(e._2()._2(), 1);  <country,city, 1>
+    })
+    .reduceByKey((a,b)->{
+       return a+b;  
+    }).cache();
+
+    // select cities with more than 500 houses high cons
+    interRes.filter(e->e._2()>500) 
+    .mapToPair(e->new Tuple2<String,Integer>(e._1().split(",")[0],e._2()))
+    .union(interRes.mapToPair(e->new Tuple2<String,Integer>(e._1().split(",")[0],0)))
+    .saveAsTextFile(outputPathPart2)
+     ;
+
+}
